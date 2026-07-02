@@ -4,6 +4,43 @@ Small self-contained CLI for reading public Chollometro listing and deal pages.
 
 It uses `uv` inline script dependencies and BeautifulSoup, so there is no project setup beyond having `uv` installed.
 
+## Installation
+
+Install `uv` first:
+
+```bash
+brew install uv
+```
+
+Or on Linux/macOS without Homebrew:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Install the CLI:
+
+```bash
+mkdir -p ~/.local/bin
+
+curl -L https://raw.githubusercontent.com/YOUR_USER/chollometro-cli/main/chollometro \
+  -o ~/.local/bin/chollometro
+
+chmod +x ~/.local/bin/chollometro
+```
+
+Make sure `~/.local/bin` is in your `PATH`:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Then run:
+
+```bash
+chollometro popular --limit 10
+```
+
 ## Usage
 
 ```bash

@@ -7,6 +7,7 @@
 
 Examples:
   ./chollometro popular --limit 10
+  ./chollometro search crossfit --limit 10
   ./chollometro deal https://www.chollometro.com/ofertas/epic-games-regala-river-city-girls-2-jueves-2-1928068
   ./chollometro https://www.chollometro.com/populares --json
 """
@@ -21,7 +22,7 @@ import sys
 import textwrap
 from dataclasses import asdict, dataclass
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import quote_plus, urljoin
 from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
@@ -284,6 +285,16 @@ def cmd_listing(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_search(args: argparse.Namespace) -> int:
+    query = " ".join(args.query)
+    url = f"{BASE_URL}/search?q={quote_plus(query)}"
+    if args.hide_expired:
+        url += "&hide_expired=true"
+    if args.sort_by:
+        url += f"&sortBy={args.sort_by}"
+    return cmd_listing(argparse.Namespace(url=url, json=args.json, limit=args.limit))
+
+
 def cmd_deal(args: argparse.Namespace) -> int:
     html_text = fetch(args.url)
     deal, description, meta = parse_deal_page(html_text, args.url)
@@ -317,6 +328,14 @@ def build_parser() -> argparse.ArgumentParser:
     add_listing_parser(subparsers, "new", "/nuevos", "Parse new deals")
     add_listing_parser(subparsers, "featured", "/", "Parse homepage featured deals")
     add_listing_parser(subparsers, "home", "/", "Alias for featured")
+
+    search = subparsers.add_parser("search", help="Search Chollometro deals")
+    search.add_argument("query", nargs="+", help="Search terms, e.g. crossfit")
+    search.add_argument("--hide-expired", action="store_true", help="Append hide_expired=true")
+    search.add_argument("--sort-by", choices=("relevance", "new", "temp"), help="Append sortBy=relevance|new|temp")
+    search.add_argument("--limit", type=int, default=20)
+    search.add_argument("--json", action="store_true")
+    search.set_defaults(func=cmd_search)
 
     deal = subparsers.add_parser("deal", help="Parse an individual deal page")
     deal.add_argument("url")

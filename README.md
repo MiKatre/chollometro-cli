@@ -49,12 +49,19 @@ chollometro popular --limit 10
 ./chollometro new --limit 10
 ./chollometro featured --limit 10
 ./chollometro home --limit 10
+./chollometro search crossfit --limit 10
+./chollometro search crossfit --hide-expired --limit 10
+./chollometro search crossfit --sort-by temp --limit 10
+./chollometro search crossfit --hide-expired --sort-by new --limit 10
 ```
 
 Direct URLs also work:
 
 ```bash
 ./chollometro "https://www.chollometro.com/populares" --limit 5
+./chollometro "https://www.chollometro.com/search?q=crossfit" --limit 5
+./chollometro "https://www.chollometro.com/search?q=crossfit&hide_expired=true" --limit 5
+./chollometro "https://www.chollometro.com/search?q=crossfit&hide_expired=true&sortBy=temp" --limit 5
 ./chollometro "https://www.chollometro.com/ofertas/epic-games-regala-river-city-girls-2-jueves-2-1928068"
 ```
 
@@ -62,6 +69,7 @@ JSON output:
 
 ```bash
 ./chollometro popular --limit 10 --json
+./chollometro search "nike metcon" --json
 ./chollometro deal "URL" --json
 ```
 
@@ -100,4 +108,7 @@ Comment bodies are not embedded in the static HTML currently fetched by this CLI
 - `most-voted` → `https://www.chollometro.com/mas-votados`
 - `new` → `https://www.chollometro.com/nuevos`
 - `featured` / `home` → `https://www.chollometro.com/`
+- `search <query>` → `https://www.chollometro.com/search?q=<query>`
+  - add `--hide-expired` for `&hide_expired=true`
+  - add `--sort-by relevance|new|temp` for `&sortBy=...`
 

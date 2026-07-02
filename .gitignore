@@ -1,0 +1,12 @@
+# Python / uv
+__pycache__/
+*.py[cod]
+.venv/
+
+# macOS
+.DS_Store
+
+# Local outputs
+*.json
+*.csv
+*.log

@@ -1,0 +1,352 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["beautifulsoup4>=4.12.3"]
+# ///
+"""Small Chollometro scraper CLI.
+
+Examples:
+  ./chollometro popular --limit 10
+  ./chollometro deal https://www.chollometro.com/ofertas/epic-games-regala-river-city-girls-2-jueves-2-1928068
+  ./chollometro https://www.chollometro.com/populares --json
+"""
+
+from __future__ import annotations
+
+import argparse
+import html
+import json
+import re
+import sys
+import textwrap
+from dataclasses import asdict, dataclass
+from typing import Any
+from urllib.parse import urljoin
+from urllib.request import Request, urlopen
+
+from bs4 import BeautifulSoup
+
+BASE_URL = "https://www.chollometro.com"
+USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 Chrome/126 Safari/537.36"
+)
+
+
+@dataclass
+class Deal:
+    title: str
+    url: str | None = None
+    current_price: float | None = None
+    previous_price: float | None = None
+    discount_percent: int | None = None
+    temperature: float | None = None
+    merchant: str | None = None
+    comments: int | None = None
+    thread_id: str | None = None
+
+
+def fetch(url: str, timeout: int = 15) -> str:
+    req = Request(url, headers={"User-Agent": USER_AGENT, "Accept-Language": "es-ES,es;q=0.9"})
+    with urlopen(req, timeout=timeout) as response:
+        return response.read().decode("utf-8", "replace")
+
+
+def parse_json_attr(value: str | None) -> dict[str, Any] | None:
+    if not value:
+        return None
+    try:
+        return json.loads(html.unescape(value))
+    except json.JSONDecodeError:
+        return None
+
+
+def fmt_money(value: float | None, *, zero_label: str = "gratis") -> str:
+    if value is None:
+        return "n/a"
+    if value == 0:
+        return zero_label
+    return f"{value:g}€"
+
+
+def computed_discount(price: float | None, previous: float | None, provided: Any = None) -> int | None:
+    if isinstance(provided, (int, float)) and provided > 0:
+        return round(float(provided))
+    if isinstance(price, (int, float)) and isinstance(previous, (int, float)) and previous > 0:
+        return round((previous - price) / previous * 100)
+    return None
+
+
+def thread_url(thread: dict[str, Any]) -> str | None:
+    if thread.get("url"):
+        return urljoin(BASE_URL, thread["url"])
+    if thread.get("titleSlug") and thread.get("threadId"):
+        return f"{BASE_URL}/ofertas/{thread['titleSlug']}-{thread['threadId']}"
+    return None
+
+
+def thread_to_deal(thread: dict[str, Any]) -> Deal | None:
+    title = thread.get("title")
+    if not title or thread.get("type") not in (None, "Deal"):
+        return None
+
+    merchant = thread.get("merchant") or {}
+    current_price = thread.get("price")
+    if current_price is None and thread.get("standardPrice") == 0 and thread.get("nextBestPrice"):
+        current_price = 0
+
+    return Deal(
+        title=title,
+        url=thread_url(thread),
+        current_price=current_price,
+        previous_price=thread.get("nextBestPrice"),
+        discount_percent=computed_discount(current_price, thread.get("nextBestPrice"), thread.get("priceDiscount")),
+        temperature=thread.get("temperature"),
+        merchant=merchant.get("merchantName"),
+        comments=thread.get("commentCount"),
+        thread_id=str(thread.get("threadId")) if thread.get("threadId") else None,
+    )
+
+
+def parse_listing(html_text: str) -> list[Deal]:
+    soup = BeautifulSoup(html_text, "html.parser")
+    deals: list[Deal] = []
+    seen: set[str] = set()
+
+    for article in soup.select("article.thread"):
+        node = article.select_one("[data-vue3]")
+        data = parse_json_attr(node.get("data-vue3") if node else None)
+        thread = (data or {}).get("props", {}).get("thread", {})
+        deal = thread_to_deal(thread)
+        if not deal:
+            continue
+        key = deal.thread_id or deal.url or deal.title
+        if key in seen:
+            continue
+        seen.add(key)
+        deals.append(deal)
+
+    return deals
+
+
+def extract_balanced_json(text: str, marker: str) -> dict[str, Any] | None:
+    marker_index = text.find(marker)
+    if marker_index == -1:
+        return None
+
+    start = text.find("{", marker_index)
+    if start == -1:
+        return None
+
+    in_string = False
+    escaped = False
+    depth = 0
+
+    for index, char in enumerate(text[start:], start):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(text[start : index + 1])
+                except json.JSONDecodeError:
+                    return None
+
+    return None
+
+
+def parse_initial_state(soup: BeautifulSoup) -> dict[str, Any] | None:
+    for script in soup.find_all("script"):
+        text = script.string or script.get_text() or ""
+        if "window.__INITIAL_STATE__" in text:
+            return extract_balanced_json(text, "window.__INITIAL_STATE__")
+    return None
+
+
+def clean_description(description_html: str | None) -> str | None:
+    if not description_html:
+        return None
+
+    soup = BeautifulSoup(description_html, "html.parser")
+
+    for video in soup.select(".userHtml-videoDummy[data-video]"):
+        data = parse_json_attr(video.get("data-video")) or {}
+        src = data.get("src")
+        if src and src.startswith("//"):
+            src = "https:" + src
+        video.replace_with(f"\n[video: {src or 'embedded video'}]\n")
+
+    for image in soup.find_all("img"):
+        src = image.get("src")
+        image.replace_with(f"\n[image: {src}]\n" if src else "\n[image]\n")
+
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+
+    text = soup.get_text("\n")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def parse_deal_page(html_text: str, url: str) -> tuple[Deal | None, str | None, dict[str, Any]]:
+    soup = BeautifulSoup(html_text, "html.parser")
+    state = parse_initial_state(soup) or {}
+    thread = state.get("threadDetail") or {}
+
+    deal = thread_to_deal(thread)
+    if not deal:
+        title = soup.title.get_text(" ", strip=True) if soup.title else url
+        deal = Deal(title=title, url=url)
+
+    comments_count = (state.get("comments") or {}).get("commentsCount") or thread.get("commentCount")
+    if comments_count is not None:
+        deal.comments = comments_count
+
+    description_html = (thread.get("threadDetails") or {}).get("preparedHtmlDescription")
+    description = clean_description(description_html)
+
+    meta = {
+        "status": thread.get("status"),
+        "link_host": thread.get("linkHost"),
+        "visit_url": thread.get("linkCloakedItemMainButton"),
+        "user": (thread.get("user") or {}).get("username"),
+        "published_at": thread.get("publishedAt"),
+        "updates": thread.get("threadUpdates", []),
+        # Public static HTML exposes the count. Comment bodies are loaded separately client-side.
+        "comments_note": "Only comments count was present in the static HTML; comment bodies were not embedded.",
+    }
+
+    return deal, description, meta
+
+
+def print_listing(deals: list[Deal], limit: int) -> None:
+    for index, deal in enumerate(deals[:limit], 1):
+        discount = f"-{deal.discount_percent}%" if deal.discount_percent is not None else "n/a"
+        temp = f"{deal.temperature:.0f}°" if isinstance(deal.temperature, (int, float)) else "n/a"
+        merchant = f" · {deal.merchant}" if deal.merchant else ""
+        print(f"{index}. {deal.title}{merchant}")
+        print(f"   {fmt_money(deal.current_price)} · before {fmt_money(deal.previous_price, zero_label='n/a')} · {discount} · {temp}")
+        if deal.url:
+            print(f"   {deal.url}")
+
+
+def print_deal(deal: Deal | None, description: str | None, meta: dict[str, Any], max_description: int | None) -> None:
+    if not deal:
+        print("No deal found")
+        return
+
+    discount = f"-{deal.discount_percent}%" if deal.discount_percent is not None else "n/a"
+    temp = f"{deal.temperature:.0f}°" if isinstance(deal.temperature, (int, float)) else "n/a"
+    print(deal.title)
+    print(f"Price: {fmt_money(deal.current_price)}")
+    print(f"Previous: {fmt_money(deal.previous_price, zero_label='n/a')}")
+    print(f"Discount: {discount}")
+    print(f"Temperature: {temp}")
+    if deal.merchant:
+        print(f"Merchant: {deal.merchant}")
+    if meta.get("link_host"):
+        print(f"Link host: {meta['link_host']}")
+    if deal.comments is not None:
+        print(f"Comments: {deal.comments}")
+    if deal.url:
+        print(f"URL: {deal.url}")
+
+    if description:
+        print("\nDescription:\n")
+        if max_description and len(description) > max_description:
+            print(textwrap.shorten(description, width=max_description, placeholder="…"))
+        else:
+            print(description)
+
+    print(f"\nNote: {meta['comments_note']}")
+
+
+def cmd_listing(args: argparse.Namespace) -> int:
+    html_text = fetch(args.url)
+    deals = parse_listing(html_text)
+    if args.json:
+        print(json.dumps([asdict(deal) for deal in deals[: args.limit]], ensure_ascii=False, indent=2))
+    else:
+        print_listing(deals, args.limit)
+    return 0
+
+
+def cmd_deal(args: argparse.Namespace) -> int:
+    html_text = fetch(args.url)
+    deal, description, meta = parse_deal_page(html_text, args.url)
+    if args.json:
+        print(
+            json.dumps(
+                {"deal": asdict(deal) if deal else None, "description": description, "meta": meta},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+    else:
+        print_deal(deal, description, meta, args.max_description)
+    return 0
+
+
+def add_listing_parser(subparsers: argparse._SubParsersAction, name: str, path: str, help_text: str) -> None:
+    listing = subparsers.add_parser(name, help=help_text)
+    listing.add_argument("url", nargs="?", default=f"{BASE_URL}{path}")
+    listing.add_argument("--limit", type=int, default=20)
+    listing.add_argument("--json", action="store_true")
+    listing.set_defaults(func=cmd_listing)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Fetch and parse Chollometro listing/deal pages")
+    subparsers = parser.add_subparsers(dest="command")
+
+    add_listing_parser(subparsers, "popular", "/populares", "Parse popular deals")
+    add_listing_parser(subparsers, "most-voted", "/mas-votados", "Parse most voted deals")
+    add_listing_parser(subparsers, "new", "/nuevos", "Parse new deals")
+    add_listing_parser(subparsers, "featured", "/", "Parse homepage featured deals")
+    add_listing_parser(subparsers, "home", "/", "Alias for featured")
+
+    deal = subparsers.add_parser("deal", help="Parse an individual deal page")
+    deal.add_argument("url")
+    deal.add_argument("--json", action="store_true")
+    deal.add_argument("--max-description", type=int, default=None)
+    deal.set_defaults(func=cmd_deal)
+
+    return parser
+
+
+def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1].startswith(("http://", "https://")):
+        auto = argparse.ArgumentParser(description="Auto-detect Chollometro listing/deal URL")
+        auto.add_argument("url")
+        auto.add_argument("--limit", type=int, default=20)
+        auto.add_argument("--json", action="store_true")
+        args = auto.parse_args()
+        if "/ofertas/" in args.url:
+            return cmd_deal(argparse.Namespace(url=args.url, json=args.json, max_description=None))
+        return cmd_listing(argparse.Namespace(url=args.url, json=args.json, limit=args.limit))
+
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if hasattr(args, "func"):
+        return args.func(args)
+
+    parser.print_help()
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -49,16 +49,22 @@ chollometro popular --limit 10
 ./chollometro new --limit 10
 ./chollometro featured --limit 10
 ./chollometro home --limit 10
+./chollometro category portatiles --limit 10
+./chollometro category portatiles --hide-expired --sort-by highest_price --limit 10
+./chollometro category portatiles --hide-expired --sort-by lowest_price --limit 10
+./chollometro categories
 ./chollometro search crossfit --limit 10
 ./chollometro search crossfit --hide-expired --limit 10
 ./chollometro search crossfit --sort-by temp --limit 10
 ./chollometro search crossfit --hide-expired --sort-by new --limit 10
+./chollometro search crossfit --hide-expired --sort-by discussion --limit 10
 ```
 
 Direct URLs also work:
 
 ```bash
 ./chollometro "https://www.chollometro.com/populares" --limit 5
+./chollometro "https://www.chollometro.com/categorias/portatiles?hide_expired=true&sortBy=temp" --limit 5
 ./chollometro "https://www.chollometro.com/search?q=crossfit" --limit 5
 ./chollometro "https://www.chollometro.com/search?q=crossfit&hide_expired=true" --limit 5
 ./chollometro "https://www.chollometro.com/search?q=crossfit&hide_expired=true&sortBy=temp" --limit 5
@@ -69,6 +75,8 @@ JSON output:
 
 ```bash
 ./chollometro popular --limit 10 --json
+./chollometro categories --json
+./chollometro category portatiles --json
 ./chollometro search "nike metcon" --json
 ./chollometro deal "URL" --json
 ```
@@ -108,7 +116,11 @@ Comment bodies are not embedded in the static HTML currently fetched by this CLI
 - `most-voted` → `https://www.chollometro.com/mas-votados`
 - `new` → `https://www.chollometro.com/nuevos`
 - `featured` / `home` → `https://www.chollometro.com/`
+- `category <slug|path|url>` → `https://www.chollometro.com/categorias/<slug>`
+  - examples: `category portatiles`, `category /categorias/portatiles`
+  - run `categories` to list known category slugs
 - `search <query>` → `https://www.chollometro.com/search?q=<query>`
-  - add `--hide-expired` for `&hide_expired=true`
-  - add `--sort-by relevance|new|temp` for `&sortBy=...`
+- category/search filters:
+  - add `--hide-expired` for `hide_expired=true`
+  - add `--sort-by <value>` for `sortBy=...`, e.g. `relevance`, `new`, `temp`, `discussion`, `lowest_price`, `highest_price`
 

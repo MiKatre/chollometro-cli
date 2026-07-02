@@ -7,6 +7,7 @@
 
 Examples:
   ./chollometro popular --limit 10
+  ./chollometro category portatiles --limit 10
   ./chollometro search crossfit --limit 10
   ./chollometro deal https://www.chollometro.com/ofertas/epic-games-regala-river-city-girls-2-jueves-2-1928068
   ./chollometro https://www.chollometro.com/populares --json
@@ -32,6 +33,189 @@ USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 Chrome/126 Safari/537.36"
 )
+
+CATEGORY_GROUPS = (
+    (
+        "Categorías más populares",
+        (
+            ("Portátiles", "/categorias/portatiles"),
+            ("Consola PS5", "/categorias/ps5"),
+            ("Consola Xbox Series X", "/categorias/xbox-series-x"),
+            ("TV y Televisores", "/categorias/televisiones"),
+            ("Consola Nintendo Switch", "/categorias/nintendo-switch"),
+            ("Smartwatches", "/categorias/smartwatch"),
+        ),
+    ),
+    (
+        "Electrónica",
+        (
+            ("Electrónica", "/categorias/electronica"),
+            ("TV y Televisores", "/categorias/televisiones"),
+            ("Ordenadores, tablets e informática", "/categorias/ordenadores"),
+            ("iPhone", "/categorias/apple-iphone"),
+            ("iPad", "/categorias/ipad"),
+            ("Portátiles", "/categorias/portatiles"),
+            ("Tablets", "/categorias/tablets"),
+        ),
+    ),
+    (
+        "Gaming",
+        (
+            ("Gaming", "/categorias/consolas-y-videojuegos"),
+            ("Consola Nintendo Switch", "/categorias/nintendo-switch"),
+            ("Nintendo Switch 2", "/categorias/nintendo-switch-2"),
+            ("Xbox", "/categorias/xbox"),
+            ("Nintendo", "/categorias/nintendo"),
+            ("GTA", "/categorias/gta"),
+            ("PlayStation", "/categorias/playstation"),
+        ),
+    ),
+    (
+        "Supermercado y alimentación",
+        (
+            ("Supermercado y alimentación", "/categorias/alimentacion-y-supermercados"),
+            ("Aceite", "/categorias/aceite"),
+            ("Detergente", "/categorias/detergente"),
+            ("Cervezas", "/categorias/cervezas"),
+            ("Gatos", "/categorias/gatos"),
+            ("Café", "/categorias/cafe"),
+            ("Finish", "/categorias/finish"),
+        ),
+    ),
+    (
+        "Moda y accesorios",
+        (
+            ("Moda y accesorios", "/categorias/moda-y-accesorios"),
+            ("Zapatillas", "/categorias/zapatillas"),
+            ("Crocs", "/categorias/crocs"),
+            ("Chanclas", "/categorias/chanclas"),
+            ("Sandalias", "/categorias/sandalias"),
+            ("Vans", "/categorias/vans"),
+            ("Converse", "/categorias/converse"),
+        ),
+    ),
+    (
+        "Salud y belleza",
+        (
+            ("Salud y belleza", "/categorias/salud-y-cosmeticos"),
+            ("Perfumes", "/categorias/perfumes"),
+            ("Desodorante", "/categorias/desodorante"),
+            ("Durex", "/categorias/durex"),
+            ("Nivea", "/categorias/nivea"),
+            ("Papel higiénico", "/categorias/papel-higienico"),
+            ("Maquillaje", "/categorias/maquillaje"),
+        ),
+    ),
+    (
+        "Juguetes, familia e hijos",
+        (
+            ("Juguetes, familia e hijos", "/categorias/familia-e-hijos"),
+            ("LEGO", "/categorias/lego"),
+            ("Pañales", "/categorias/panales"),
+            ("Juegos de mesa", "/categorias/juegos-de-mesa"),
+            ("Playmobil", "/categorias/playmobil"),
+            ("Juguetes", "/categorias/juegos-y-juguetes"),
+            ("Pañales Dodot", "/categorias/dodot"),
+        ),
+    ),
+    (
+        "Hogar, vivienda y oficina",
+        (
+            ("Hogar, vivienda y oficina", "/categorias/hogar-y-jardin"),
+            ("Aire acondicionado", "/categorias/aire-acondicionado"),
+            ("Lavavajillas", "/categorias/lavavajillas"),
+            ("Microondas", "/categorias/microondas"),
+            ("Robot aspirador", "/categorias/robot-aspirador"),
+            ("Sartenes", "/categorias/sartenes"),
+            ("Ventiladores", "/categorias/ventiladores"),
+        ),
+    ),
+    (
+        "Jardín y bricolaje",
+        (
+            ("Jardín y bricolaje", "/categorias/jardin-y-bricolaje"),
+            ("Herramientas", "/categorias/herramientas"),
+            ("Piscinas", "/categorias/piscinas"),
+            ("Makita", "/categorias/makita"),
+            ("Jardín", "/categorias/jardin"),
+            ("Hamacas", "/categorias/hamacas"),
+            ("Destornilladores", "/categorias/destornilladores-y-atornilladores"),
+        ),
+    ),
+    (
+        "Coches y motos",
+        (
+            ("Coches y motos", "/categorias/coche-y-moto"),
+            ("Neumáticos", "/categorias/neumaticos"),
+            ("TomTom", "/categorias/tomtom"),
+            ("Cascos de moto", "/categorias/cascos-de-moto"),
+            ("Combustible", "/categorias/combustible"),
+            ("Chaquetas de moto", "/categorias/chaquetas-de-moto"),
+            ("Accesorios de moto", "/categorias/equipo-de-moto"),
+        ),
+    ),
+    (
+        "Cine, libros, cultura y ocio",
+        (
+            ("Cine, libros, cultura y ocio", "/categorias/cultura-y-entretenimiento"),
+            ("Cine", "/categorias/cine"),
+            ("Parque Warner", "/categorias/parque-warner"),
+            ("Libros", "/categorias/libros"),
+            ("Guitarras", "/categorias/guitarras"),
+            ("Entradas de cine", "/categorias/entradas-de-cine"),
+            ("DVD", "/categorias/dvd"),
+        ),
+    ),
+    (
+        "Deportes y aire libre",
+        (
+            ("Deportes y aire libre", "/categorias/deportes-y-ejercicio"),
+            ("adidas", "/categorias/adidas"),
+            ("Nike", "/categorias/nike"),
+            ("ASICS", "/categorias/asics"),
+            ("New Balance", "/categorias/new-balance"),
+            ("Running", "/categorias/running"),
+            ("Puma", "/categorias/puma"),
+        ),
+    ),
+    (
+        "Viajes",
+        (
+            ("Viajes", "/categorias/viajes-y-ocio"),
+            ("Vuelos", "/categorias/billetes-de-avion"),
+            ("Hoteles", "/categorias/hoteles"),
+            ("Spa", "/categorias/spa"),
+            ("Cruceros", "/categorias/cruceros"),
+            ("Escapadas", "/categorias/escapada"),
+            ("Alojamiento", "/categorias/alojamiento"),
+        ),
+    ),
+    (
+        "Sector servicios",
+        (
+            ("Sector servicios", "/categorias/servicios-varios"),
+            ("Spotify", "/categorias/spotify"),
+            ("Netflix", "/categorias/netflix"),
+            ("Comida a domicilio", "/categorias/comida-a-domicilio"),
+            ("Streaming", "/categorias/streaming"),
+            ("Comida rápida", "/categorias/fast-foods"),
+            ("Suscripciones", "/categorias/suscripciones"),
+        ),
+    ),
+    (
+        "Marcas",
+        (
+            ("Marcas", "/categorias/marcas"),
+            ("Xiaomi", "/categorias/xiaomi"),
+            ("Garmin", "/categorias/garmin"),
+            ("Dyson", "/categorias/dyson"),
+            ("Casio", "/categorias/casio"),
+            ("OnePlus", "/categorias/oneplus"),
+            ("Disney", "/categorias/disney"),
+        ),
+    ),
+)
+KNOWN_CATEGORY_PATHS = {path.rsplit("/", 1)[-1]: path for _, categories in CATEGORY_GROUPS for _, path in categories}
 
 
 @dataclass
@@ -285,13 +469,58 @@ def cmd_listing(args: argparse.Namespace) -> int:
     return 0
 
 
+def with_listing_params(url: str, args: argparse.Namespace) -> str:
+    params = []
+    if getattr(args, "hide_expired", False):
+        params.append("hide_expired=true")
+    if getattr(args, "sort_by", None):
+        params.append(f"sortBy={args.sort_by}")
+    if not params:
+        return url
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}{'&'.join(params)}"
+
+
+def resolve_category_url(category: str) -> str:
+    value = category.strip()
+    if value.startswith(("http://", "https://")):
+        return value
+    if value.startswith("/"):
+        return urljoin(BASE_URL, value)
+    if value.startswith("categorias/"):
+        return urljoin(BASE_URL, f"/{value}")
+    return f"{BASE_URL}{KNOWN_CATEGORY_PATHS.get(value, f'/categorias/{value}')}"
+
+
+def category_rows() -> list[dict[str, str]]:
+    return [
+        {"group": group, "name": name, "path": path, "slug": path.rsplit("/", 1)[-1]}
+        for group, categories in CATEGORY_GROUPS
+        for name, path in categories
+    ]
+
+
+def cmd_categories(args: argparse.Namespace) -> int:
+    if args.json:
+        print(json.dumps(category_rows(), ensure_ascii=False, indent=2))
+        return 0
+
+    for group, categories in CATEGORY_GROUPS:
+        print(group)
+        for name, path in categories:
+            print(f"  {path.rsplit('/', 1)[-1]:<36} {name}")
+        print()
+    return 0
+
+
+def cmd_category(args: argparse.Namespace) -> int:
+    url = with_listing_params(resolve_category_url(args.category), args)
+    return cmd_listing(argparse.Namespace(url=url, json=args.json, limit=args.limit))
+
+
 def cmd_search(args: argparse.Namespace) -> int:
     query = " ".join(args.query)
-    url = f"{BASE_URL}/search?q={quote_plus(query)}"
-    if args.hide_expired:
-        url += "&hide_expired=true"
-    if args.sort_by:
-        url += f"&sortBy={args.sort_by}"
+    url = with_listing_params(f"{BASE_URL}/search?q={quote_plus(query)}", args)
     return cmd_listing(argparse.Namespace(url=url, json=args.json, limit=args.limit))
 
 
@@ -311,6 +540,16 @@ def cmd_deal(args: argparse.Namespace) -> int:
     return 0
 
 
+def add_listing_filters(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--hide-expired", action="store_true", help="Append hide_expired=true")
+    parser.add_argument(
+        "--sort-by",
+        help="Append sortBy=<value>, e.g. relevance, new, temp, discussion, lowest_price, highest_price",
+    )
+    parser.add_argument("--limit", type=int, default=20)
+    parser.add_argument("--json", action="store_true")
+
+
 def add_listing_parser(subparsers: argparse._SubParsersAction, name: str, path: str, help_text: str) -> None:
     listing = subparsers.add_parser(name, help=help_text)
     listing.add_argument("url", nargs="?", default=f"{BASE_URL}{path}")
@@ -320,7 +559,22 @@ def add_listing_parser(subparsers: argparse._SubParsersAction, name: str, path: 
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Fetch and parse Chollometro listing/deal pages")
+    parser = argparse.ArgumentParser(
+        description="Fetch and parse Chollometro listing/deal pages",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""Examples:
+  chollometro popular --limit 10
+  chollometro category portatiles --hide-expired --sort-by highest_price --limit 10
+  chollometro search crossfit --hide-expired --sort-by temp --limit 10
+  chollometro categories
+
+Category/search filters:
+  --hide-expired          append hide_expired=true
+  --sort-by <value>      append sortBy=<value>, e.g. relevance, new, temp, discussion, lowest_price, highest_price
+
+Use `chollometro <command> -h` for command-specific options.
+""",
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     add_listing_parser(subparsers, "popular", "/populares", "Parse popular deals")
@@ -329,12 +583,18 @@ def build_parser() -> argparse.ArgumentParser:
     add_listing_parser(subparsers, "featured", "/", "Parse homepage featured deals")
     add_listing_parser(subparsers, "home", "/", "Alias for featured")
 
+    category = subparsers.add_parser("category", help="Parse a category page by slug, path, or URL")
+    category.add_argument("category", help="Category slug/path/URL, e.g. portatiles or /categorias/portatiles")
+    add_listing_filters(category)
+    category.set_defaults(func=cmd_category)
+
+    categories = subparsers.add_parser("categories", help="List known category slugs")
+    categories.add_argument("--json", action="store_true")
+    categories.set_defaults(func=cmd_categories)
+
     search = subparsers.add_parser("search", help="Search Chollometro deals")
     search.add_argument("query", nargs="+", help="Search terms, e.g. crossfit")
-    search.add_argument("--hide-expired", action="store_true", help="Append hide_expired=true")
-    search.add_argument("--sort-by", choices=("relevance", "new", "temp"), help="Append sortBy=relevance|new|temp")
-    search.add_argument("--limit", type=int, default=20)
-    search.add_argument("--json", action="store_true")
+    add_listing_filters(search)
     search.set_defaults(func=cmd_search)
 
     deal = subparsers.add_parser("deal", help="Parse an individual deal page")
